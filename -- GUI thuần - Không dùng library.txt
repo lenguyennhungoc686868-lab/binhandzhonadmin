@@ -1,0 +1,80 @@
+--// GUI thuần - Không dùng library
+
+local Player = game.Players.LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
+
+-- ScreenGui
+local ScreenGui = Instance.new("ScreenGui", PlayerGui)
+ScreenGui.Name = "SimpleGUI"
+ScreenGui.ResetOnSpawn = false
+
+-- Main Frame
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Size = UDim2.new(0, 300, 0, 220)
+Frame.Position = UDim2.new(0.5, -150, 0.5, -110)
+Frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+Frame.Active = true
+Frame.Draggable = true
+
+-- Title
+local Title = Instance.new("TextLabel", Frame)
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.Text = "No Library GUI"
+Title.TextColor3 = Color3.new(1,1,1)
+Title.BackgroundColor3 = Color3.fromRGB(45,45,45)
+
+-- Speed Button
+local SpeedBtn = Instance.new("TextButton", Frame)
+SpeedBtn.Size = UDim2.new(0, 260, 0, 35)
+SpeedBtn.Position = UDim2.new(0, 20, 0, 50)
+SpeedBtn.Text = "Toggle Speed"
+SpeedBtn.BackgroundColor3 = Color3.fromRGB(60,60,60)
+SpeedBtn.TextColor3 = Color3.new(1,1,1)
+
+-- Jump Button
+local JumpBtn = Instance.new("TextButton", Frame)
+JumpBtn.Size = UDim2.new(0, 260, 0, 35)
+JumpBtn.Position = UDim2.new(0, 20, 0, 95)
+JumpBtn.Text = "Toggle Jump"
+JumpBtn.BackgroundColor3 = Color3.fromRGB(60,60,60)
+JumpBtn.TextColor3 = Color3.new(1,1,1)
+
+-- Kill Button
+local KillBtn = Instance.new("TextButton", Frame)
+KillBtn.Size = UDim2.new(0, 260, 0, 35)
+KillBtn.Position = UDim2.new(0, 20, 0, 140)
+KillBtn.Text = "Kill Character"
+KillBtn.BackgroundColor3 = Color3.fromRGB(120,40,40)
+KillBtn.TextColor3 = Color3.new(1,1,1)
+
+-- Logic
+local SpeedOn = false
+local JumpOn = false
+
+SpeedBtn.MouseButton1Click:Connect(function()
+    SpeedOn = not SpeedOn
+    while SpeedOn do
+        pcall(function()
+            Player.Character.Humanoid.WalkSpeed = 50
+        end)
+        task.wait()
+    end
+    Player.Character.Humanoid.WalkSpeed = 16
+end)
+
+JumpBtn.MouseButton1Click:Connect(function()
+    JumpOn = not JumpOn
+    while JumpOn do
+        pcall(function()
+            Player.Character.Humanoid.JumpPower = 100
+        end)
+        task.wait()
+    end
+    Player.Character.Humanoid.JumpPower = 50
+end)
+
+KillBtn.MouseButton1Click:Connect(function()
+    pcall(function()
+        Player.Character.Humanoid.Health = 0
+    end)
+end)
