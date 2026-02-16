@@ -1,80 +1,721 @@
---// GUI thuần - Không dùng library
+--[[
+    ███╗   ███╗ █████╗ ██████╗ ██╗   ██╗    ██╗  ██╗██╗   ██╗██████╗ 
+    ████╗ ████║██╔══██╗██╔══██╗██║   ██║    ██║  ██║██║   ██║██╔══██╗
+    ██╔████╔██║███████║██████╔╝██║   ██║    ███████║██║   ██║██████╔╝
+    ██║╚██╔╝██║██╔══██║██╔══██╗██║   ██║    ██╔══██║██║   ██║██╔══██╗
+    ██║ ╚═╝ ██║██║  ██║██║  ██║╚██████╔╝    ██║  ██║╚██████╔╝██████╔╝
+    ╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝     ╚═╝  ╚═╝ ╚═════╝ ╚═════╝ 
+    
+    MARU HUB PREMIUM - BLOX FRUIT 2026
+    GIAO DIỆN GIỐNG MARU HUB - FULL CHỨC NĂNG
+    CODE BY: MARU TEAM
+--]]
 
-local Player = game.Players.LocalPlayer
-local PlayerGui = Player:WaitForChild("PlayerGui")
+-- Khởi tạo services
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local VirtualUser = game:GetService("VirtualUser")
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local Lighting = game:GetService("Lighting")
+local LocalPlayer = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
 
--- ScreenGui
-local ScreenGui = Instance.new("ScreenGui", PlayerGui)
-ScreenGui.Name = "SimpleGUI"
+-- Biến toàn cục
+local MaruHub = {
+    Settings = {
+        -- Main Farm
+        AutoFarm = false,
+        AutoBoss = false,
+        AutoRaid = false,
+        AutoQuest = false,
+        AutoStats = false,
+        AutoClick = true,
+        FastAttack = false,
+        BringMob = false,
+        KillAura = false,
+        KillAuraRange = 30,
+        FarmMethod = "Aura",
+        FarmDistance = 3000,
+        
+        -- Fruit
+        AutoFruit = false,
+        FruitSniper = false,
+        FruitStorage = false,
+        FruitEat = false,
+        FruitType = "All",
+        
+        -- Raid
+        RaidType = "Flame",
+        AutoChip = false,
+        AutoNextRaid = false,
+        
+        -- Sea
+        AutoSeaBeast = false,
+        AutoShip = false,
+        AutoLeviathan = false,
+        AutoTerror = false,
+        
+        -- Misc
+        AutoChest = false,
+        AutoBones = false,
+        AutoFragment = false,
+        AutoBeli = false,
+        AutoHaki = false,
+        AutoSword = false,
+        AutoGun = false,
+        AutoRace = false,
+        
+        -- Teleport
+        TeleportToIsland = "",
+        TeleportToBoss = "",
+        TeleportToFruit = "",
+        
+        -- Visual
+        ESP = false,
+        ESPColor = Color3.fromRGB(255, 0, 0),
+        NameESP = false,
+        DistanceESP = false,
+        
+        -- Misc
+        FPSBoost = false,
+        AntiAfk = false,
+        Whitelist = {"MaruHub"},
+        Notifications = true
+    },
+    
+    Connections = {},
+    ESPObjects = {}
+}
+
+-- Tạo GUI chính
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "MaruHubPremium"
 ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = game.CoreGui
 
--- Main Frame
-local Frame = Instance.new("Frame", ScreenGui)
-Frame.Size = UDim2.new(0, 300, 0, 220)
-Frame.Position = UDim2.new(0.5, -150, 0.5, -110)
-Frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
-Frame.Active = true
-Frame.Draggable = true
-
--- Title
-local Title = Instance.new("TextLabel", Frame)
-Title.Size = UDim2.new(1, 0, 0, 30)
-Title.Text = "No Library GUI"
-Title.TextColor3 = Color3.new(1,1,1)
-Title.BackgroundColor3 = Color3.fromRGB(45,45,45)
-
--- Speed Button
-local SpeedBtn = Instance.new("TextButton", Frame)
-SpeedBtn.Size = UDim2.new(0, 260, 0, 35)
-SpeedBtn.Position = UDim2.new(0, 20, 0, 50)
-SpeedBtn.Text = "Toggle Speed"
-SpeedBtn.BackgroundColor3 = Color3.fromRGB(60,60,60)
-SpeedBtn.TextColor3 = Color3.new(1,1,1)
-
--- Jump Button
-local JumpBtn = Instance.new("TextButton", Frame)
-JumpBtn.Size = UDim2.new(0, 260, 0, 35)
-JumpBtn.Position = UDim2.new(0, 20, 0, 95)
-JumpBtn.Text = "Toggle Jump"
-JumpBtn.BackgroundColor3 = Color3.fromRGB(60,60,60)
-JumpBtn.TextColor3 = Color3.new(1,1,1)
-
--- Kill Button
-local KillBtn = Instance.new("TextButton", Frame)
-KillBtn.Size = UDim2.new(0, 260, 0, 35)
-KillBtn.Position = UDim2.new(0, 20, 0, 140)
-KillBtn.Text = "Kill Character"
-KillBtn.BackgroundColor3 = Color3.fromRGB(120,40,40)
-KillBtn.TextColor3 = Color3.new(1,1,1)
-
--- Logic
-local SpeedOn = false
-local JumpOn = false
-
-SpeedBtn.MouseButton1Click:Connect(function()
-    SpeedOn = not SpeedOn
-    while SpeedOn do
-        pcall(function()
-            Player.Character.Humanoid.WalkSpeed = 50
-        end)
-        task.wait()
+-- Xóa GUI cũ nếu có
+for _, v in pairs(game.CoreGui:GetChildren()) do
+    if v.Name == "MaruHubPremium" and v ~= ScreenGui then
+        v:Destroy()
     end
-    Player.Character.Humanoid.WalkSpeed = 16
+end
+
+-- =============================================
+-- WATERMARK (giống Maru Hub)
+-- =============================================
+local Watermark = Instance.new("Frame")
+Watermark.Parent = ScreenGui
+Watermark.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+Watermark.BackgroundTransparency = 0.3
+Watermark.Position = UDim2.new(0, 10, 0, 10)
+Watermark.Size = UDim2.new(0, 200, 0, 30)
+Watermark.BorderSizePixel = 0
+
+local WatermarkCorner = Instance.new("UICorner")
+WatermarkCorner.CornerRadius = UDim.new(0, 5)
+WatermarkCorner.Parent = Watermark
+
+local WatermarkText = Instance.new("TextLabel")
+WatermarkText.Parent = Watermark
+WatermarkText.BackgroundTransparency = 1
+WatermarkText.Size = UDim2.new(1, 0, 1, 0)
+WatermarkText.Text = "🌙 MARU HUB | LOADED"
+WatermarkText.TextColor3 = Color3.fromRGB(255, 255, 255)
+WatermarkText.Font = Enum.Font.GothamBold
+WatermarkText.TextSize = 14
+
+-- =============================================
+-- MAIN GUI (giống Maru Hub)
+-- =============================================
+local MainFrame = Instance.new("Frame")
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+MainFrame.BorderSizePixel = 0
+MainFrame.Position = UDim2.new(0.5, -400, 0.5, -300)
+MainFrame.Size = UDim2.new(0, 800, 0, 600)
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Visible = false  -- Ẩn ban đầu, sẽ hiện khi nhấn nút
+
+-- Bo góc
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 10)
+MainCorner.Parent = MainFrame
+
+-- Drop Shadow
+local Shadow = Instance.new("ImageLabel")
+Shadow.Parent = MainFrame
+Shadow.BackgroundTransparency = 1
+Shadow.Position = UDim2.new(0, -10, 0, -10)
+Shadow.Size = UDim2.new(1, 20, 1, 20)
+Shadow.Image = "rbxassetid://6014261993"
+Shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+Shadow.ImageTransparency = 0.5
+Shadow.ZIndex = -1
+
+-- =============================================
+-- TITLE BAR (giống Maru Hub)
+-- =============================================
+local TitleBar = Instance.new("Frame")
+TitleBar.Parent = MainFrame
+TitleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+TitleBar.BorderSizePixel = 0
+TitleBar.Size = UDim2.new(1, 0, 0, 50)
+
+local TitleCorner = Instance.new("UICorner")
+TitleCorner.CornerRadius = UDim.new(0, 10)
+TitleCorner.Parent = TitleBar
+
+-- Logo
+local Logo = Instance.new("ImageLabel")
+Logo.Parent = TitleBar
+Logo.BackgroundTransparency = 1
+Logo.Position = UDim2.new(0, 10, 0, 5)
+Logo.Size = UDim2.new(0, 40, 0, 40)
+Logo.Image = "rbxassetid://1234567890"  -- Thay bằng ID logo của bạn
+Logo.ImageColor3 = Color3.fromRGB(100, 150, 255)
+
+local TitleText = Instance.new("TextLabel")
+TitleText.Parent = TitleBar
+TitleText.BackgroundTransparency = 1
+TitleText.Position = UDim2.new(0, 60, 0, 0)
+TitleText.Size = UDim2.new(0, 300, 1, 0)
+TitleText.Text = "MARU HUB PREMIUM"
+TitleText.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleText.Font = Enum.Font.GothamBold
+TitleText.TextSize = 24
+TitleText.TextXAlignment = Enum.TextXAlignment.Left
+
+local VersionText = Instance.new("TextLabel")
+VersionText.Parent = TitleBar
+VersionText.BackgroundTransparency = 1
+VersionText.Position = UDim2.new(0, 270, 0, 28)
+VersionText.Size = UDim2.new(0, 100, 0, 20)
+VersionText.Text = "v2.0.6 | 2026"
+VersionText.TextColor3 = Color3.fromRGB(150, 150, 150)
+VersionText.Font = Enum.Font.Gotham
+VersionText.TextSize = 12
+VersionText.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Buttons trên Title Bar
+local MinimizeBtn = Instance.new("TextButton")
+MinimizeBtn.Parent = TitleBar
+MinimizeBtn.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
+MinimizeBtn.Position = UDim2.new(1, -90, 0, 10)
+MinimizeBtn.Size = UDim2.new(0, 30, 0, 30)
+MinimizeBtn.Text = "−"
+MinimizeBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
+MinimizeBtn.Font = Enum.Font.GothamBold
+MinimizeBtn.TextSize = 20
+
+local MinCorner = Instance.new("UICorner")
+MinCorner.CornerRadius = UDim.new(0, 5)
+MinCorner.Parent = MinimizeBtn
+
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Parent = TitleBar
+CloseBtn.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+CloseBtn.Position = UDim2.new(1, -50, 0, 10)
+CloseBtn.Size = UDim2.new(0, 30, 0, 30)
+CloseBtn.Text = "✕"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextSize = 18
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 5)
+CloseCorner.Parent = CloseBtn
+
+MinimizeBtn.MouseButton1Click:Connect(function()
+    MainFrame.Visible = false
 end)
 
-JumpBtn.MouseButton1Click:Connect(function()
-    JumpOn = not JumpOn
-    while JumpOn do
-        pcall(function()
-            Player.Character.Humanoid.JumpPower = 100
-        end)
-        task.wait()
-    end
-    Player.Character.Humanoid.JumpPower = 50
+CloseBtn.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
 end)
 
-KillBtn.MouseButton1Click:Connect(function()
-    pcall(function()
-        Player.Character.Humanoid.Health = 0
+-- =============================================
+-- TABS (giống Maru Hub - sidebar bên trái)
+-- =============================================
+local SideBar = Instance.new("Frame")
+SideBar.Parent = MainFrame
+SideBar.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+SideBar.Position = UDim2.new(0, 0, 0, 50)
+SideBar.Size = UDim2.new(0, 200, 1, -50)
+SideBar.BorderSizePixel = 0
+
+local SideCorner = Instance.new("UICorner")
+SideCorner.CornerRadius = UDim.new(0, 10)
+SideCorner.Parent = SideBar
+
+-- User Info
+local UserFrame = Instance.new("Frame")
+UserFrame.Parent = SideBar
+UserFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+UserFrame.Position = UDim2.new(0, 10, 0, 10)
+UserFrame.Size = UDim2.new(0, 180, 0, 60)
+
+local UserCorner = Instance.new("UICorner")
+UserCorner.CornerRadius = UDim.new(0, 5)
+UserCorner.Parent = UserFrame
+
+local Avatar = Instance.new("ImageLabel")
+Avatar.Parent = UserFrame
+Avatar.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+Avatar.Position = UDim2.new(0, 5, 0, 5)
+Avatar.Size = UDim2.new(0, 50, 0, 50)
+Avatar.Image = "rbxthumb://type=AvatarHeadShot&id="..LocalPlayer.UserId.."&w=150&h=150"
+Avatar.BorderSizePixel = 0
+
+local AvatarCorner = Instance.new("UICorner")
+AvatarCorner.CornerRadius = UDim.new(1, 0)
+AvatarCorner.Parent = Avatar
+
+local UserName = Instance.new("TextLabel")
+UserName.Parent = UserFrame
+UserName.BackgroundTransparency = 1
+UserName.Position = UDim2.new(0, 65, 0, 5)
+UserName.Size = UDim2.new(0, 110, 0, 25)
+UserName.Text = LocalPlayer.Name
+UserName.TextColor3 = Color3.fromRGB(255, 255, 255)
+UserName.Font = Enum.Font.GothamBold
+UserName.TextSize = 14
+UserName.TextXAlignment = Enum.TextXAlignment.Left
+UserName.TextTruncate = Enum.TextTruncate.AtEnd
+
+local UserLevel = Instance.new("TextLabel")
+UserLevel.Parent = UserFrame
+UserLevel.BackgroundTransparency = 1
+UserLevel.Position = UDim2.new(0, 65, 0, 30)
+UserLevel.Size = UDim2.new(0, 110, 0, 20)
+UserLevel.Text = "Level: ?"
+UserLevel.TextColor3 = Color3.fromRGB(200, 200, 0)
+UserLevel.Font = Enum.Font.Gotham
+UserLevel.TextSize = 12
+UserLevel.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Tabs List
+local Tabs = {
+    {Name = "🏠 MAIN", Icon = "rbxassetid://6031094678"},
+    {Name = "⚔️ FARM", Icon = "rbxassetid://6031094678"},
+    {Name = "🍎 FRUIT", Icon = "rbxassetid://6031094678"},
+    {Name = "🌀 RAID", Icon = "rbxassetid://6031094678"},
+    {Name = "🌊 SEA", Icon = "rbxassetid://6031094678"},
+    {Name = "📦 MISC", Icon = "rbxassetid://6031094678"},
+    {Name = "👁️ ESP", Icon = "rbxassetid://6031094678"},
+    {Name = "⚙️ SETTINGS", Icon = "rbxassetid://6031094678"}
+}
+
+local TabButtons = {}
+local CurrentTab = 1
+
+for i, tab in ipairs(Tabs) do
+    local TabBtn = Instance.new("TextButton")
+    TabBtn.Parent = SideBar
+    TabBtn.BackgroundColor3 = i == 1 and Color3.fromRGB(65, 105, 225) or Color3.fromRGB(30, 30, 40)
+    TabBtn.BackgroundTransparency = i == 1 and 0 or 1
+    TabBtn.Position = UDim2.new(0, 10, 0, 80 + (i-1) * 45)
+    TabBtn.Size = UDim2.new(0, 180, 0, 40)
+    TabBtn.Text = ""
+    TabBtn.AutoButtonColor = false
+    
+    -- Icon
+    local Icon = Instance.new("ImageLabel")
+    Icon.Parent = TabBtn
+    Icon.BackgroundTransparency = 1
+    Icon.Position = UDim2.new(0, 10, 0, 5)
+    Icon.Size = UDim2.new(0, 30, 0, 30)
+    Icon.Image = tab.Icon
+    Icon.ImageColor3 = i == 1 and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(150, 150, 150)
+    
+    -- Text
+    local TabText = Instance.new("TextLabel")
+    TabText.Parent = TabBtn
+    TabText.BackgroundTransparency = 1
+    TabText.Position = UDim2.new(0, 45, 0, 0)
+    TabText.Size = UDim2.new(1, -50, 1, 0)
+    TabText.Text = tab.Name
+    TabText.TextColor3 = i == 1 and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(150, 150, 150)
+    TabText.Font = Enum.Font.GothamSemibold
+    TabText.TextSize = 14
+    TabText.TextXAlignment = Enum.TextXAlignment.Left
+    
+    TabBtn.MouseButton1Click:Connect(function()
+        for idx, btn in ipairs(TabButtons) do
+            btn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+            btn.BackgroundTransparency = 1
+            btn:FindFirstChild("ImageLabel").ImageColor3 = Color3.fromRGB(150, 150, 150)
+            btn:FindFirstChild("TextLabel").TextColor3 = Color3.fromRGB(150, 150, 150)
+        end
+        TabBtn.BackgroundColor3 = Color3.fromRGB(65, 105, 225)
+        TabBtn.BackgroundTransparency = 0
+        Icon.ImageColor3 = Color3.fromRGB(255, 255, 255)
+        TabText.TextColor3 = Color3.fromRGB(255, 255, 255)
+        CurrentTab = i
+        UpdateTabContent()
     end)
-end)
+    
+    table.insert(TabButtons, TabBtn)
+end
+
+-- =============================================
+-- CONTENT AREA
+-- =============================================
+local ContentFrame = Instance.new("Frame")
+ContentFrame.Parent = MainFrame
+ContentFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+ContentFrame.Position = UDim2.new(0, 210, 0, 60)
+ContentFrame.Size = UDim2.new(1, -220, 1, -70)
+ContentFrame.BorderSizePixel = 0
+ContentFrame.ClipsDescendants = true
+
+local ContentCorner = Instance.new("UICorner")
+ContentCorner.CornerRadius = UDim.new(0, 10)
+ContentCorner.Parent = ContentFrame
+
+-- Scrolling Frame cho content
+local ContentScrolling = Instance.new("ScrollingFrame")
+ContentScrolling.Parent = ContentFrame
+ContentScrolling.BackgroundTransparency = 1
+ContentScrolling.Size = UDim2.new(1, 0, 1, 0)
+ContentScrolling.CanvasSize = UDim2.new(0, 0, 5, 0)
+ContentScrolling.ScrollBarThickness = 5
+ContentScrolling.ScrollBarImageColor3 = Color3.fromRGB(65, 105, 225)
+
+-- =============================================
+-- FUNCTIONS TẠO UI ELEMENTS (giống Maru Hub)
+-- =============================================
+
+-- Tạo Section
+local function CreateSection(parent, title, yPos)
+    local Section = Instance.new("Frame")
+    Section.Parent = parent
+    Section.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+    Section.Position = UDim2.new(0, 10, 0, yPos)
+    Section.Size = UDim2.new(0, 550, 0, 30)
+    Section.BorderSizePixel = 0
+    
+    local SectionCorner = Instance.new("UICorner")
+    SectionCorner.CornerRadius = UDim.new(0, 5)
+    SectionCorner.Parent = Section
+    
+    local SectionTitle = Instance.new("TextLabel")
+    SectionTitle.Parent = Section
+    SectionTitle.BackgroundTransparency = 1
+    SectionTitle.Position = UDim2.new(0, 10, 0, 0)
+    SectionTitle.Size = UDim2.new(1, -20, 1, 0)
+    SectionTitle.Text = title
+    SectionTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SectionTitle.Font = Enum.Font.GothamBold
+    SectionTitle.TextSize = 16
+    SectionTitle.TextXAlignment = Enum.TextXAlignment.Left
+    
+    return yPos + 35
+end
+
+-- Tạo Toggle (giống Maru Hub)
+local function CreateToggle(parent, text, yPos, var, default)
+    local y = yPos
+    
+    local ToggleFrame = Instance.new("Frame")
+    ToggleFrame.Parent = parent
+    ToggleFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+    ToggleFrame.Position = UDim2.new(0, 10, 0, y)
+    ToggleFrame.Size = UDim2.new(0, 260, 0, 35)
+    ToggleFrame.BorderSizePixel = 0
+    
+    local ToggleCorner = Instance.new("UICorner")
+    ToggleCorner.CornerRadius = UDim.new(0, 5)
+    ToggleCorner.Parent = ToggleFrame
+    
+    local ToggleBtn = Instance.new("TextButton")
+    ToggleBtn.Parent = ToggleFrame
+    ToggleBtn.BackgroundColor3 = default and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(60, 60, 70)
+    ToggleBtn.Position = UDim2.new(0, 5, 0, 5)
+    ToggleBtn.Size = UDim2.new(0, 25, 0, 25)
+    ToggleBtn.Text = ""
+    ToggleBtn.AutoButtonColor = false
+    
+    local ToggleCornerBtn = Instance.new("UICorner")
+    ToggleCornerBtn.CornerRadius = UDim.new(0, 3)
+    ToggleCornerBtn.Parent = ToggleBtn
+    
+    local ToggleText = Instance.new("TextLabel")
+    ToggleText.Parent = ToggleFrame
+    ToggleText.BackgroundTransparency = 1
+    ToggleText.Position = UDim2.new(0, 35, 0, 0)
+    ToggleText.Size = UDim2.new(1, -40, 1, 0)
+    ToggleText.Text = text
+    ToggleText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    ToggleText.Font = Enum.Font.Gotham
+    ToggleText.TextSize = 14
+    ToggleText.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local ToggleValue = Instance.new("TextLabel")
+    ToggleValue.Parent = ToggleFrame
+    ToggleValue.BackgroundTransparency = 1
+    ToggleValue.Position = UDim2.new(1, -50, 0, 0)
+    ToggleValue.Size = UDim2.new(0, 45, 1, 0)
+    ToggleValue.Text = default and "ON" or "OFF"
+    ToggleValue.TextColor3 = default and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+    ToggleValue.Font = Enum.Font.GothamBold
+    ToggleValue.TextSize = 12
+    
+    MaruHub.Settings[var] = default or false
+    
+    ToggleBtn.MouseButton1Click:Connect(function()
+        MaruHub.Settings[var] = not MaruHub.Settings[var]
+        if MaruHub.Settings[var] then
+            ToggleBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
+            ToggleValue.Text = "ON"
+            ToggleValue.TextColor3 = Color3.fromRGB(0, 255, 0)
+        else
+            ToggleBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+            ToggleValue.Text = "OFF"
+            ToggleValue.TextColor3 = Color3.fromRGB(255, 0, 0)
+        end
+    end)
+    
+    return y + 40
+end
+
+-- Tạo Dropdown (giống Maru Hub)
+local function CreateDropdown(parent, text, yPos, options, var, default)
+    local y = yPos
+    
+    local DropFrame = Instance.new("Frame")
+    DropFrame.Parent = parent
+    DropFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+    DropFrame.Position = UDim2.new(0, 10, 0, y)
+    DropFrame.Size = UDim2.new(0, 260, 0, 35)
+    DropFrame.BorderSizePixel = 0
+    
+    local DropCorner = Instance.new("UICorner")
+    DropCorner.CornerRadius = UDim.new(0, 5)
+    DropCorner.Parent = DropFrame
+    
+    local DropLabel = Instance.new("TextLabel")
+    DropLabel.Parent = DropFrame
+    DropLabel.BackgroundTransparency = 1
+    DropLabel.Position = UDim2.new(0, 10, 0, 0)
+    DropLabel.Size = UDim2.new(0, 100, 1, 0)
+    DropLabel.Text = text
+    DropLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    DropLabel.Font = Enum.Font.Gotham
+    DropLabel.TextSize = 14
+    DropLabel.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local DropButton = Instance.new("TextButton")
+    DropButton.Parent = DropFrame
+    DropButton.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+    DropButton.Position = UDim2.new(0, 115, 0, 5)
+    DropButton.Size = UDim2.new(0, 130, 0, 25)
+    DropButton.Text = default or options[1]
+    DropButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    DropButton.Font = Enum.Font.GothamSemibold
+    DropButton.TextSize = 12
+    
+    local DropBtnCorner = Instance.new("UICorner")
+    DropBtnCorner.CornerRadius = UDim.new(0, 3)
+    DropBtnCorner.Parent = DropButton
+    
+    MaruHub.Settings[var] = default or options[1]
+    
+    -- Dropdown List
+    local DropList = Instance.new("Frame")
+    DropList.Parent = DropFrame
+    DropList.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+    DropList.Position = UDim2.new(0, 115, 0, 35)
+    DropList.Size = UDim2.new(0, 130, 0, 0)
+    DropList.ClipsDescendants = true
+    DropList.BorderSizePixel = 0
+    DropList.ZIndex = 10
+    
+    local ListCorner = Instance.new("UICorner")
+    ListCorner.CornerRadius = UDim.new(0, 3)
+    ListCorner.Parent = DropList
+    
+    local ListLayout = Instance.new("UIListLayout")
+    ListLayout.Parent = DropList
+    ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    ListLayout.Padding = UDim.new(0, 2)
+    
+    for _, opt in ipairs(options) do
+        local OptBtn = Instance.new("TextButton")
+        OptBtn.Parent = DropList
+        OptBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+        OptBtn.Size = UDim2.new(1, 0, 0, 25)
+        OptBtn.Text = opt
+        OptBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        OptBtn.Font = Enum.Font.Gotham
+        OptBtn.TextSize = 11
+        OptBtn.ZIndex = 11
+        OptBtn.AutoButtonColor = false
+        
+        OptBtn.MouseButton1Click:Connect(function()
+            DropButton.Text = opt
+            MaruHub.Settings[var] = opt
+            DropList.Size = UDim2.new(0, 130, 0, 0)
+        end)
+    end
+    
+    DropButton.MouseButton1Click:Connect(function()
+        if DropList.Size.Y.Offset == 0 then
+            DropList.Size = UDim2.new(0, 130, 0, math.min(#options * 27, 150))
+        else
+            DropList.Size = UDim2.new(0, 130, 0, 0)
+        end
+    end)
+    
+    return y + 40
+end
+
+-- Tạo Slider (giống Maru Hub)
+local function CreateSlider(parent, text, yPos, min, max, default, var)
+    local y = yPos
+    
+    local SliderFrame = Instance.new("Frame")
+    SliderFrame.Parent = parent
+    SliderFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+    SliderFrame.Position = UDim2.new(0, 10, 0, y)
+    SliderFrame.Size = UDim2.new(0, 260, 0, 50)
+    SliderFrame.BorderSizePixel = 0
+    
+    local SliderCorner = Instance.new("UICorner")
+    SliderCorner.CornerRadius = UDim.new(0, 5)
+    SliderCorner.Parent = SliderFrame
+    
+    local SliderLabel = Instance.new("TextLabel")
+    SliderLabel.Parent = SliderFrame
+    SliderLabel.BackgroundTransparency = 1
+    SliderLabel.Position = UDim2.new(0, 10, 0, 5)
+    SliderLabel.Size = UDim2.new(0, 200, 0, 20)
+    SliderLabel.Text = text
+    SliderLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SliderLabel.Font = Enum.Font.Gotham
+    SliderLabel.TextSize = 14
+    SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local ValueLabel = Instance.new("TextLabel")
+    ValueLabel.Parent = SliderFrame
+    ValueLabel.BackgroundTransparency = 1
+    ValueLabel.Position = UDim2.new(0, 180, 0, 5)
+    ValueLabel.Size = UDim2.new(0, 50, 0, 20)
+    ValueLabel.Text = tostring(default)
+    ValueLabel.TextColor3 = Color3.fromRGB(100, 200, 255)
+    ValueLabel.Font = Enum.Font.GothamBold
+    ValueLabel.TextSize = 14
+    
+    local SliderBg = Instance.new("Frame")
+    SliderBg.Parent = SliderFrame
+    SliderBg.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+    SliderBg.Position = UDim2.new(0, 10, 0, 30)
+    SliderBg.Size = UDim2.new(0, 230, 0, 5)
+    
+    local SliderBgCorner = Instance.new("UICorner")
+    SliderBgCorner.CornerRadius = UDim.new(1, 0)
+    SliderBgCorner.Parent = SliderBg
+    
+    local SliderFill = Instance.new("Frame")
+    SliderFill.Parent = SliderBg
+    SliderFill.BackgroundColor3 = Color3.fromRGB(65, 105, 225)
+    SliderFill.Size = UDim2.new((default-min)/(max-min), 0, 1, 0)
+    
+    local SliderFillCorner = Instance.new("UICorner")
+    SliderFillCorner.CornerRadius = UDim.new(1, 0)
+    SliderFillCorner.Parent = SliderFill
+    
+    local SliderBtn = Instance.new("TextButton")
+    SliderBtn.Parent = SliderBg
+    SliderBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    SliderBtn.Position = UDim2.new((default-min)/(max-min), -7, -0.7, 0)
+    SliderBtn.Size = UDim2.new(0, 15, 0, 15)
+    SliderBtn.Text = ""
+    
+    local SliderBtnCorner = Instance.new("UICorner")
+    SliderBtnCorner.CornerRadius = UDim.new(1, 0)
+    SliderBtnCorner.Parent = SliderBtn
+    
+    MaruHub.Settings[var] = default
+    
+    SliderBtn.MouseButton1Down:Connect(function()
+        local drag
+        drag = RunService.RenderStepped:Connect(function()
+            local mousePos = UserInputService:GetMouseLocation()
+            local sliderPos = SliderBg.AbsolutePosition
+            local sliderSize = SliderBg.AbsoluteSize.X
+            local relativeX = math.clamp(mousePos.X - sliderPos.X, 0, sliderSize)
+            local newValue = min + (relativeX / sliderSize) * (max - min)
+            newValue = math.floor(newValue)
+            
+            ValueLabel.Text = tostring(newValue)
+            SliderFill.Size = UDim2.new(relativeX/sliderSize, 0, 1, 0)
+            SliderBtn.Position = UDim2.new(relativeX/sliderSize, -7, -0.7, 0)
+            MaruHub.Settings[var] = newValue
+        end)
+        
+        SliderBtn.MouseButton1Up:Connect(function()
+            drag:Disconnect()
+        end)
+    end)
+    
+    return y + 55
+end
+
+-- Tạo Button (giống Maru Hub)
+local function CreateButton(parent, text, yPos, callback)
+    local y = yPos
+    
+    local Button = Instance.new("TextButton")
+    Button.Parent = parent
+    Button.BackgroundColor3 = Color3.fromRGB(65, 105, 225)
+    Button.Position = UDim2.new(0, 10, 0, y)
+    Button.Size = UDim2.new(0, 260, 0, 40)
+    Button.Text = text
+    Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Button.Font = Enum.Font.GothamBold
+    Button.TextSize = 14
+    
+    local ButtonCorner = Instance.new("UICorner")
+    ButtonCorner.CornerRadius = UDim.new(0, 5)
+    ButtonCorner.Parent = Button
+    
+    Button.MouseButton1Click:Connect(callback)
+    
+    return y + 45
+end
+
+-- =============================================
+-- CẬP NHẬT NỘI DUNG TAB
+-- =============================================
+function UpdateTabContent()
+    -- Clear content
+    for _, v in pairs(ContentScrolling:GetChildren()) do
+        v:Destroy()
+    end
+    
+    local yPos = 10
+    
+    if CurrentTab == 1 then  -- MAIN
+        yPos = CreateSection(ContentScrolling, "📊 THÔNG TIN NGƯỜI CHƠI", yPos)
+        
+        -- Thông tin player
+        local InfoFrame = Instance.new("Frame")
+        InfoFrame.Parent = ContentScrolling
+        InfoFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+        InfoFrame.Position = UDim2.new(0, 10, 0, yPos)
+        InfoFrame.Size = UDim2.new(0, 550, 0, 100)
+        InfoFrame.BorderSizePixel = 0
+        
+        local InfoCorner = Instance.new("UICorner")
+        InfoCorner.CornerRadius = UDim.new(0, 5)
+        InfoCorner.Parent = InfoFrame
+        
+        -- Cập nhật thông tin realtime
+        spawn(function()
+            while true do
+                pcall(function()
