@@ -1,662 +1,94 @@
---[[
-    ██████╗  █████╗ ███╗   ██╗ █████╗ ███╗   ██╗ █████╗     ██╗  ██╗██╗   ██╗██████╗ 
-    ██╔══██╗██╔══██╗████╗  ██║██╔══██╗████╗  ██║██╔══██╗    ██║  ██║██║   ██║██╔══██╗
-    ██████╔╝███████║██╔██╗ ██║███████║██╔██╗ ██║███████║    ███████║██║   ██║██████╔╝
-    ██╔══██╗██╔══██║██║╚██╗██║██╔══██║██║╚██╗██║██╔══██║    ██╔══██║██║   ██║██╔══██╗
-    ██████╔╝██║  ██║██║ ╚████║██║  ██║██║ ╚████║██║  ██║    ██║  ██║╚██████╔╝██████╔╝
-    ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝    ╚═╝  ╚═╝ ╚═════╝ ╚═════╝ 
-    
-    BANANA HUB RAITUN - BLOX FRUIT 2026
-    TÍNH NĂNG: AUTO FARM LEVEL, AUTO QUEST, AUTO BOSS, ITEM COLLECTOR
-    GIAO DIỆN GIỐNG HÌNH ẢNH BẠN YÊU CẦU
-]]
+local player = game.Players.LocalPlayer
+local lighting = game:GetService("Lighting")
+local runService = game:GetService("RunService")
 
--- Khởi tạo services
-local Players = game:GetService("Players")
-local Workspace = game:GetService("Workspace")
-local VirtualUser = game:GetService("VirtualUser")
-local RunService = game:GetService("RunService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
-local LocalPlayer = Players.LocalPlayer
+-- GUI
+local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+gui.Name = "UltraFastMode"
 
--- Biến cấu hình chính
-local Settings = {
-    -- Auto Farm
-    AutoFarm = false,
-    AutoQuest = false,
-    AutoBoss = false,
-    AutoRaid = false,
-    AutoChest = false,
-    
-    -- Level-based farming
-    CurrentLevel = 0,
-    TargetLevel = 2600,
-    FarmMode = "Level", -- Level, Material, Money
-    
-    -- Combat
-    AutoClick = true,
-    UseSkills = true,
-    FastAttack = false,
-    BringMob = false,
-    KillAura = false,
-    KillAuraRange = 30,
-    
-    -- Item Collection
-    CollectFruits = false,
-    CollectChests = false,
-    CollectMaterials = false,
-    CollectBones = false,
-    CollectFragments = false,
-    
-    -- Account Items
-    CursedDualKatana = false,
-    Yama = false,
-    Tushita = false,
-    Canvander = false,
-    BuddySword = false,
-    DarkDagger = false,
-    
-    -- Teleport
-    TeleportToIsland = "",
-    TeleportToBoss = "",
-    
-    -- GUI Settings
-    ShowStats = true,
-    ShowItems = true
-}
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0,260,0,160)
+frame.Position = UDim2.new(0.5,-130,0.5,-80)
+frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+frame.BackgroundTransparency = 0.2
+frame.Active = true
+frame.Draggable = true
 
--- =============================================
--- TẠO GIAO DIỆN GIỐNG HÌNH ẢNH
--- =============================================
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "BananaHubRaitun"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-ScreenGui.Parent = game.CoreGui
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1,0,0,30)
+title.BackgroundTransparency = 1
+title.Text = "⚡ ULTRA FAST FLAG MODE"
+title.TextColor3 = Color3.new(1,1,1)
 
--- Xóa GUI cũ nếu có
-for _, v in pairs(game.CoreGui:GetChildren()) do
-    if v.Name == "BananaHubRaitun" and v ~= ScreenGui then
-        v:Destroy()
-    end
-end
+local button = Instance.new("TextButton", frame)
+button.Size = UDim2.new(0.8,0,0,40)
+button.Position = UDim2.new(0.1,0,0.35,0)
+button.Text = "ACTIVATE"
+button.BackgroundColor3 = Color3.fromRGB(40,40,40)
+button.TextColor3 = Color3.new(1,1,1)
 
--- Frame chính
-local MainFrame = Instance.new("Frame")
-MainFrame.Parent = ScreenGui
-MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-MainFrame.BorderSizePixel = 0
-MainFrame.Position = UDim2.new(0.5, -350, 0.5, -300)
-MainFrame.Size = UDim2.new(0, 700, 0, 600)
-MainFrame.Active = true
-MainFrame.Draggable = true
+local fpsLabel = Instance.new("TextLabel", frame)
+fpsLabel.Size = UDim2.new(1,0,0,30)
+fpsLabel.Position = UDim2.new(0,0,0.75,0)
+fpsLabel.BackgroundTransparency = 1
+fpsLabel.TextColor3 = Color3.new(0,1,0)
+fpsLabel.Text = "FPS: Calculating..."
 
-local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 10)
-MainCorner.Parent = MainFrame
+-- FPS Counter
+local last = tick()
+local frames = 0
 
--- Title Bar (giống hình "BANANA HUB RAITUN")
-local TitleBar = Instance.new("Frame")
-TitleBar.Parent = MainFrame
-TitleBar.BackgroundColor3 = Color3.fromRGB(255, 180, 0) -- Màu vàng cam
-TitleBar.Size = UDim2.new(1, 0, 0, 50)
-TitleBar.BorderSizePixel = 0
-
-local TitleCorner = Instance.new("UICorner")
-TitleCorner.CornerRadius = UDim.new(0, 10)
-TitleCorner.Parent = TitleBar
-
-local TitleText = Instance.new("TextLabel")
-TitleText.Parent = TitleBar
-TitleText.BackgroundTransparency = 1
-TitleText.Position = UDim2.new(0, 20, 0, 0)
-TitleText.Size = UDim2.new(0, 300, 1, 0)
-TitleText.Text = "🍌 BANANA HUB RAITUN"
-TitleText.TextColor3 = Color3.fromRGB(0, 0, 0)
-TitleText.Font = Enum.Font.GothamBold
-TitleText.TextSize = 24
-TitleText.TextXAlignment = Enum.TextXAlignment.Left
-
-local VersionText = Instance.new("TextLabel")
-VersionText.Parent = TitleBar
-VersionText.BackgroundTransparency = 1
-VersionText.Position = UDim2.new(0, 320, 0, 15)
-VersionText.Size = UDim2.new(0, 100, 0, 20)
-VersionText.Text = "v2.0.6 | 2026"
-VersionText.TextColor3 = Color3.fromRGB(50, 50, 50)
-VersionText.Font = Enum.Font.Gotham
-VersionText.TextSize = 14
-
-local CloseBtn = Instance.new("TextButton")
-CloseBtn.Parent = TitleBar
-CloseBtn.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-CloseBtn.Position = UDim2.new(1, -40, 0, 10)
-CloseBtn.Size = UDim2.new(0, 30, 0, 30)
-CloseBtn.Text = "✕"
-CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.TextSize = 18
-
-local CloseCorner = Instance.new("UICorner")
-CloseCorner.CornerRadius = UDim.new(0, 5)
-CloseCorner.Parent = CloseBtn
-
-CloseBtn.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
+runService.RenderStepped:Connect(function()
+	frames += 1
+	if tick() - last >= 1 then
+		fpsLabel.Text = "FPS: "..frames
+		frames = 0
+		last = tick()
+	end
 end)
 
--- =============================================
--- TABS CHÍNH (giống hình: Account Items, Cursed Dual Kauna, FRUITS)
--- =============================================
-local TabFrame = Instance.new("Frame")
-TabFrame.Parent = MainFrame
-TabFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-TabFrame.Position = UDim2.new(0, 10, 0, 60)
-TabFrame.Size = UDim2.new(0, 680, 0, 40)
-
-local TabCorner = Instance.new("UICorner")
-TabCorner.CornerRadius = UDim.new(0, 5)
-TabCorner.Parent = TabFrame
-
--- Tabs
-local Tabs = {
-    {Name = "📊 BANANA STATS CHECKER", Icon = ""},
-    {Name = "📦 ACCOUNT ITEMS", Icon = ""},
-    {Name = "⚔️ CURSED DUAL KATANA", Icon = ""},
-    {Name = "🍎 FRUITS", Icon = ""},
-    {Name = "⚙️ AUTO FARM", Icon = ""},
-    {Name = "🌊 SEA EVENTS", Icon = ""}
-}
-
-local TabButtons = {}
-local CurrentTab = 1
-
-for i, tab in ipairs(Tabs) do
-    local TabBtn = Instance.new("TextButton")
-    TabBtn.Parent = TabFrame
-    TabBtn.BackgroundColor3 = i == 1 and Color3.fromRGB(255, 180, 0) or Color3.fromRGB(45, 45, 55)
-    TabBtn.Position = UDim2.new(0, 5 + (i-1) * 113, 0, 5)
-    TabBtn.Size = UDim2.new(0, 108, 0, 30)
-    TabBtn.Text = tab.Name
-    TabBtn.TextColor3 = i == 1 and Color3.fromRGB(0, 0, 0) or Color3.fromRGB(255, 255, 255)
-    TabBtn.Font = Enum.Font.GothamBold
-    TabBtn.TextSize = 11
-    TabBtn.TextWrapped = true
-    
-    local BtnCorner = Instance.new("UICorner")
-    BtnCorner.CornerRadius = UDim.new(0, 5)
-    BtnCorner.Parent = TabBtn
-    
-    TabBtn.MouseButton1Click:Connect(function()
-        CurrentTab = i
-        for idx, btn in ipairs(TabButtons) do
-            btn.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
-            btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        end
-        TabBtn.BackgroundColor3 = Color3.fromRGB(255, 180, 0)
-        TabBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
-        UpdateTabContent()
-    end)
-    
-    table.insert(TabButtons, TabBtn)
+-- Optimization Function
+local function optimize()
+	lighting.GlobalShadows = false
+	lighting.FogEnd = 1000000
+	lighting.Brightness = 1
+	
+	for _,v in pairs(lighting:GetChildren()) do
+		if v:IsA("PostEffect") then
+			v.Enabled = false
+		end
+	end
+	
+	for _,v in pairs(workspace:GetDescendants()) do
+		if v:IsA("ParticleEmitter") or v:IsA("Trail") then
+			v.Enabled = false
+		end
+		if v:IsA("BasePart") then
+			v.Material = Enum.Material.Plastic
+			v.Reflectance = 0
+		end
+	end
+	
+	settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
 end
 
--- Content Frame
-local ContentFrame = Instance.new("Frame")
-ContentFrame.Parent = MainFrame
-ContentFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-ContentFrame.Position = UDim2.new(0, 10, 0, 110)
-ContentFrame.Size = UDim2.new(1, -20, 1, -120)
-
-local ContentCorner = Instance.new("UICorner")
-ContentCorner.CornerRadius = UDim.new(0, 5)
-ContentCorner.Parent = ContentFrame
-
--- Scrolling Frame cho content
-local ContentScrolling = Instance.new("ScrollingFrame")
-ContentScrolling.Parent = ContentFrame
-ContentScrolling.BackgroundTransparency = 1
-ContentScrolling.Size = UDim2.new(1, 0, 1, 0)
-ContentScrolling.CanvasSize = UDim2.new(0, 0, 5, 0)
-ContentScrolling.ScrollBarThickness = 5
-ContentScrolling.ScrollBarImageColor3 = Color3.fromRGB(255, 180, 0)
-
--- =============================================
--- HÀM TẠO UI ELEMENTS
--- =============================================
-
--- Tạo Section Header
-local function CreateSection(parent, title, yPos)
-    local Section = Instance.new("Frame")
-    Section.Parent = parent
-    Section.BackgroundColor3 = Color3.fromRGB(255, 180, 0)
-    Section.Position = UDim2.new(0, 10, 0, yPos)
-    Section.Size = UDim2.new(0, 660, 0, 30)
-    
-    local SectionCorner = Instance.new("UICorner")
-    SectionCorner.CornerRadius = UDim.new(0, 5)
-    SectionCorner.Parent = Section
-    
-    local SectionTitle = Instance.new("TextLabel")
-    SectionTitle.Parent = Section
-    SectionTitle.BackgroundTransparency = 1
-    SectionTitle.Position = UDim2.new(0, 10, 0, 0)
-    SectionTitle.Size = UDim2.new(1, -20, 1, 0)
-    SectionTitle.Text = title
-    SectionTitle.TextColor3 = Color3.fromRGB(0, 0, 0)
-    SectionTitle.Font = Enum.Font.GothamBold
-    SectionTitle.TextSize = 16
-    SectionTitle.TextXAlignment = Enum.TextXAlignment.Left
-    
-    return yPos + 35
+-- Loading Animation
+local function loading()
+	button.Text = "LOADING 0%"
+	for i = 1,100 do
+		button.Text = "LOADING "..i.."%"
+		task.wait(0.01)
+	end
 end
 
--- Tạo Toggle Button
-local function CreateToggle(parent, text, yPos, var, default)
-    local y = yPos
-    
-    local ToggleFrame = Instance.new("Frame")
-    ToggleFrame.Parent = parent
-    ToggleFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-    ToggleFrame.Position = UDim2.new(0, 10, 0, y)
-    ToggleFrame.Size = UDim2.new(0, 320, 0, 35)
-    
-    local ToggleCorner = Instance.new("UICorner")
-    ToggleCorner.CornerRadius = UDim.new(0, 5)
-    ToggleCorner.Parent = ToggleFrame
-    
-    local ToggleBtn = Instance.new("TextButton")
-    ToggleBtn.Parent = ToggleFrame
-    ToggleBtn.BackgroundColor3 = default and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(200, 0, 0)
-    ToggleBtn.Position = UDim2.new(0, 5, 0, 5)
-    ToggleBtn.Size = UDim2.new(0, 25, 0, 25)
-    ToggleBtn.Text = ""
-    
-    local ToggleCornerBtn = Instance.new("UICorner")
-    ToggleCornerBtn.CornerRadius = UDim.new(0, 3)
-    ToggleCornerBtn.Parent = ToggleBtn
-    
-    local ToggleText = Instance.new("TextLabel")
-    ToggleText.Parent = ToggleFrame
-    ToggleText.BackgroundTransparency = 1
-    ToggleText.Position = UDim2.new(0, 35, 0, 0)
-    ToggleText.Size = UDim2.new(1, -40, 1, 0)
-    ToggleText.Text = text
-    ToggleText.TextColor3 = Color3.fromRGB(255, 255, 255)
-    ToggleText.Font = Enum.Font.Gotham
-    ToggleText.TextSize = 14
-    ToggleText.TextXAlignment = Enum.TextXAlignment.Left
-    
-    local ToggleValue = Instance.new("TextLabel")
-    ToggleValue.Parent = ToggleFrame
-    ToggleValue.BackgroundTransparency = 1
-    ToggleValue.Position = UDim2.new(1, -50, 0, 0)
-    ToggleValue.Size = UDim2.new(0, 45, 1, 0)
-    ToggleValue.Text = default and "ON" or "OFF"
-    ToggleValue.TextColor3 = default and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
-    ToggleValue.Font = Enum.Font.GothamBold
-    ToggleValue.TextSize = 12
-    
-    Settings[var] = default or false
-    
-    ToggleBtn.MouseButton1Click:Connect(function()
-        Settings[var] = not Settings[var]
-        if Settings[var] then
-            ToggleBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
-            ToggleValue.Text = "ON"
-            ToggleValue.TextColor3 = Color3.fromRGB(0, 255, 0)
-        else
-            ToggleBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-            ToggleValue.Text = "OFF"
-            ToggleValue.TextColor3 = Color3.fromRGB(255, 0, 0)
-        end
-    end)
-    
-    return y + 40
-end
+local active = false
 
--- Tạo Item Display (cho Account Items)
-local function CreateItemDisplay(parent, itemName, yPos, hasItem)
-    local y = yPos
-    
-    local ItemFrame = Instance.new("Frame")
-    ItemFrame.Parent = parent
-    ItemFrame.BackgroundColor3 = hasItem and Color3.fromRGB(0, 100, 0) or Color3.fromRGB(60, 60, 70)
-    ItemFrame.Position = UDim2.new(0, 10, 0, y)
-    ItemFrame.Size = UDim2.new(0, 320, 0, 35)
-    
-    local ItemCorner = Instance.new("UICorner")
-    ItemCorner.CornerRadius = UDim.new(0, 5)
-    ItemCorner.Parent = ItemFrame
-    
-    local ItemText = Instance.new("TextLabel")
-    ItemText.Parent = ItemFrame
-    ItemText.BackgroundTransparency = 1
-    ItemText.Position = UDim2.new(0, 10, 0, 0)
-    ItemText.Size = UDim2.new(0, 200, 1, 0)
-    ItemText.Text = itemName
-    ItemText.TextColor3 = Color3.fromRGB(255, 255, 255)
-    ItemText.Font = Enum.Font.GothamBold
-    ItemText.TextSize = 14
-    ItemText.TextXAlignment = Enum.TextXAlignment.Left
-    
-    local ItemStatus = Instance.new("TextLabel")
-    ItemStatus.Parent = ItemFrame
-    ItemStatus.BackgroundTransparency = 1
-    ItemStatus.Position = UDim2.new(1, -70, 0, 0)
-    ItemStatus.Size = UDim2.new(0, 60, 1, 0)
-    ItemStatus.Text = hasItem and "✅ OWNED" or "❌ MISSING"
-    ItemStatus.TextColor3 = hasItem and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
-    ItemStatus.Font = Enum.Font.GothamBold
-    ItemStatus.TextSize = 12
-    
-    return y + 40
-end
-
--- =============================================
--- CẬP NHẬT NỘI DUNG TAB
--- =============================================
-function UpdateTabContent()
-    -- Clear content
-    for _, v in pairs(ContentScrolling:GetChildren()) do
-        v:Destroy()
-    end
-    
-    local yPos = 10
-    
-    if CurrentTab == 1 then  -- BANANA STATS CHECKER
-        yPos = CreateSection(ContentScrolling, "📊 THỐNG KÊ NGƯỜI CHƠI", yPos)
-        
-        -- Player Stats
-        local StatsFrame = Instance.new("Frame")
-        StatsFrame.Parent = ContentScrolling
-        StatsFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-        StatsFrame.Position = UDim2.new(0, 10, 0, yPos)
-        StatsFrame.Size = UDim2.new(0, 660, 0, 120)
-        StatsFrame.BorderSizePixel = 0
-        
-        local StatsCorner = Instance.new("UICorner")
-        StatsCorner.CornerRadius = UDim.new(0, 5)
-        StatsCorner.Parent = StatsFrame
-        
-        -- Thông tin level
-        local LevelLabel = Instance.new("TextLabel")
-        LevelLabel.Parent = StatsFrame
-        LevelLabel.BackgroundTransparency = 1
-        LevelLabel.Position = UDim2.new(0, 20, 0, 15)
-        LevelLabel.Size = UDim2.new(0, 200, 0, 25)
-        LevelLabel.Text = "CURRENT LEVEL:"
-        LevelLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-        LevelLabel.Font = Enum.Font.Gotham
-        LevelLabel.TextSize = 16
-        LevelLabel.TextXAlignment = Enum.TextXAlignment.Left
-        
-        local LevelValue = Instance.new("TextLabel")
-        LevelValue.Parent = StatsFrame
-        LevelValue.BackgroundTransparency = 1
-        LevelValue.Position = UDim2.new(0, 200, 0, 15)
-        LevelValue.Size = UDim2.new(0, 100, 0, 25)
-        LevelValue.Text = "???"
-        LevelValue.TextColor3 = Color3.fromRGB(255, 180, 0)
-        LevelValue.Font = Enum.Font.GothamBold
-        LevelValue.TextSize = 20
-        LevelValue.TextXAlignment = Enum.TextXAlignment.Left
-        
-        -- Beli
-        local BeliLabel = Instance.new("TextLabel")
-        BeliLabel.Parent = StatsFrame
-        BeliLabel.BackgroundTransparency = 1
-        BeliLabel.Position = UDim2.new(0, 20, 0, 50)
-        BeliLabel.Size = UDim2.new(0, 200, 0, 25)
-        BeliLabel.Text = "BELI:"
-        BeliLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-        BeliLabel.Font = Enum.Font.Gotham
-        BeliLabel.TextSize = 16
-        BeliLabel.TextXAlignment = Enum.TextXAlignment.Left
-        
-        local BeliValue = Instance.new("TextLabel")
-        BeliValue.Parent = StatsFrame
-        BeliValue.BackgroundTransparency = 1
-        BeliValue.Position = UDim2.new(0, 200, 0, 50)
-        BeliValue.Size = UDim2.new(0, 200, 0, 25)
-        BeliValue.Text = "???"
-        BeliValue.TextColor3 = Color3.fromRGB(0, 255, 0)
-        BeliValue.Font = Enum.Font.GothamBold
-        BeliValue.TextSize = 16
-        BeliValue.TextXAlignment = Enum.TextXAlignment.Left
-        
-        -- Fragments
-        local FragLabel = Instance.new("TextLabel")
-        FragLabel.Parent = StatsFrame
-        FragLabel.BackgroundTransparency = 1
-        FragLabel.Position = UDim2.new(0, 20, 0, 80)
-        FragLabel.Size = UDim2.new(0, 200, 0, 25)
-        FragLabel.Text = "FRAGMENTS:"
-        FragLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-        FragLabel.Font = Enum.Font.Gotham
-        FragLabel.TextSize = 16
-        FragLabel.TextXAlignment = Enum.TextXAlignment.Left
-        
-        local FragValue = Instance.new("TextLabel")
-        FragValue.Parent = StatsFrame
-        FragValue.BackgroundTransparency = 1
-        FragValue.Position = UDim2.new(0, 200, 0, 80)
-        FragValue.Size = UDim2.new(0, 200, 0, 25)
-        FragValue.Text = "???"
-        FragValue.TextColor3 = Color3.fromRGB(100, 200, 255)
-        FragValue.Font = Enum.Font.GothamBold
-        FragValue.TextSize = 16
-        FragValue.TextXAlignment = Enum.TextXAlignment.Left
-        
-        -- Cập nhật stats realtime
-        spawn(function()
-            while true do
-                pcall(function()
-                    if LocalPlayer.Data and LocalPlayer.Data.Level then
-                        LevelValue.Text = tostring(LocalPlayer.Data.Level.Value)
-                    end
-                    if LocalPlayer.Data and LocalPlayer.Data.Beli then
-                        BeliValue.Text = tostring(LocalPlayer.Data.Beli.Value)
-                    end
-                    if LocalPlayer.Data and LocalPlayer.Data.Fragments then
-                        FragValue.Text = tostring(LocalPlayer.Data.Fragments.Value)
-                    end
-                end)
-                wait(1)
-            end
-        end)
-        
-        yPos = yPos + 125
-        
-    elseif CurrentTab == 2 then  -- ACCOUNT ITEMS
-        yPos = CreateSection(ContentScrolling, "📦 ACCOUNT ITEMS", yPos)
-        
-        -- Kiểm tra item có trong inventory không
-        -- (Đây là phần ảo, cần code thực tế để kiểm tra)
-        
-        yPos = CreateItemDisplay(ContentScrolling, "⚔️ Cursed Dual Katana", yPos, false)
-        yPos = CreateItemDisplay(ContentScrolling, "🗡️ Yama", yPos, false)
-        yPos = CreateItemDisplay(ContentScrolling, "⚔️ Tushita", yPos, false)
-        yPos = CreateItemDisplay(ContentScrolling, "🔪 Canvander", yPos, false)
-        yPos = CreateItemDisplay(ContentScrolling, "🗡️ Buddy Sword", yPos, false)
-        yPos = CreateItemDisplay(ContentScrolling, "⚔️ Dark Dagger", yPos, false)
-        yPos = CreateItemDisplay(ContentScrolling, "🔮 Hallow Scythe", yPos, false)
-        yPos = CreateItemDisplay(ContentScrolling, "🏹 Soul Guitar", yPos, false)
-        
-    elseif CurrentTab == 3 then  -- CURSED DUAL KATANA
-        yPos = CreateSection(ContentScrolling, "⚔️ CURSED DUAL KATANA PROGRESS", yPos)
-        
-        -- Thông tin Yama
-        local YamaFrame = Instance.new("Frame")
-        YamaFrame.Parent = ContentScrolling
-        YamaFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-        YamaFrame.Position = UDim2.new(0, 10, 0, yPos)
-        YamaFrame.Size = UDim2.new(0, 320, 0, 80)
-        
-        local YamaCorner = Instance.new("UICorner")
-        YamaCorner.CornerRadius = UDim.new(0, 5)
-        YamaCorner.Parent = YamaFrame
-        
-        local YamaTitle = Instance.new("TextLabel")
-        YamaTitle.Parent = YamaFrame
-        YamaTitle.BackgroundTransparency = 1
-        YamaTitle.Position = UDim2.new(0, 10, 0, 5)
-        YamaTitle.Size = UDim2.new(1, -20, 0, 25)
-        YamaTitle.Text = "YAMA (Death Step)"
-        YamaTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-        YamaTitle.Font = Enum.Font.GothamBold
-        YamaTitle.TextSize = 16
-        YamaTitle.TextXAlignment = Enum.TextXAlignment.Left
-        
-        local YamaStatus = Instance.new("TextLabel")
-        YamaStatus.Parent = YamaFrame
-        YamaStatus.BackgroundTransparency = 1
-        YamaStatus.Position = UDim2.new(0, 10, 0, 35)
-        YamaStatus.Size = UDim2.new(1, -20, 0, 20)
-        YamaStatus.Text = "Status: ❌ Not Obtained"
-        YamaStatus.TextColor3 = Color3.fromRGB(255, 0, 0)
-        YamaStatus.Font = Enum.Font.Gotham
-        YamaStatus.TextSize = 14
-        YamaStatus.TextXAlignment = Enum.TextXAlignment.Left
-        
-        -- Thông tin Tushita
-        local TushitaFrame = Instance.new("Frame")
-        TushitaFrame.Parent = ContentScrolling
-        TushitaFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-        TushitaFrame.Position = UDim2.new(0, 340, 0, yPos)
-        TushitaFrame.Size = UDim2.new(0, 320, 0, 80)
-        
-        local TushitaCorner = Instance.new("UICorner")
-        TushitaCorner.CornerRadius = UDim.new(0, 5)
-        TushitaCorner.Parent = TushitaFrame
-        
-        local TushitaTitle = Instance.new("TextLabel")
-        TushitaTitle.Parent = TushitaFrame
-        TushitaTitle.BackgroundTransparency = 1
-        TushitaTitle.Position = UDim2.new(0, 10, 0, 5)
-        TushitaTitle.Size = UDim2.new(1, -20, 0, 25)
-        TushitaTitle.Text = "TUSHITA (Light Step)"
-        TushitaTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-        TushitaTitle.Font = Enum.Font.GothamBold
-        TushitaTitle.TextSize = 16
-        TushitaTitle.TextXAlignment = Enum.TextXAlignment.Left
-        
-        local TushitaStatus = Instance.new("TextLabel")
-        TushitaStatus.Parent = TushitaFrame
-        TushitaStatus.BackgroundTransparency = 1
-        TushitaStatus.Position = UDim2.new(0, 10, 0, 35)
-        TushitaStatus.Size = UDim2.new(1, -20, 0, 20)
-        TushitaStatus.Text = "Status: ❌ Not Obtained"
-        TushitaStatus.TextColor3 = Color3.fromRGB(255, 0, 0)
-        TushitaStatus.Font = Enum.Font.Gotham
-        TushitaStatus.TextSize = 14
-        TushitaStatus.TextXAlignment = Enum.TextXAlignment.Left
-        
-        yPos = yPos + 85
-        
-        -- Nút auto farm Cursed Dual Katana
-        local FarmCDKBtn = Instance.new("TextButton")
-        FarmCDKBtn.Parent = ContentScrolling
-        FarmCDKBtn.BackgroundColor3 = Color3.fromRGB(255, 180, 0)
-        FarmCDKBtn.Position = UDim2.new(0, 10, 0, yPos)
-        FarmCDKBtn.Size = UDim2.new(0, 660, 0, 40)
-        FarmCDKBtn.Text = "⚔️ AUTO FARM CURSED DUAL KATANA"
-        FarmCDKBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
-        FarmCDKBtn.Font = Enum.Font.GothamBold
-        FarmCDKBtn.TextSize = 16
-        
-        local BtnCorner = Instance.new("UICorner")
-        BtnCorner.CornerRadius = UDim.new(0, 5)
-        BtnCorner.Parent = FarmCDKBtn
-        
-        FarmCDKBtn.MouseButton1Click:Connect(function()
-            Settings.AutoBoss = true
-            print("✅ Bắt đầu auto farm Cursed Dual Katana")
-        end)
-        
-        yPos = yPos + 45
-        
-    elseif CurrentTab == 4 then  -- FRUITS
-        yPos = CreateSection(ContentScrolling, "🍎 FRUIT COLLECTION", yPos)
-        
-        -- Danh sách trái
-        local fruits = {
-            "Flame", "Ice", "Quake", "Light", "Dark", "String", 
-            "Rumble", "Magma", "Human", "Buddha", "Love", "Spider",
-            "Phoenix", "Portal", "Dough", "Venom", "Shadow", "Control",
-            "Spirit", "Dragon", "Leopard"
-        }
-        
-        local col1_y = yPos
-        local col2_y = yPos
-        
-        for i, fruit in ipairs(fruits) do
-            if i <= 11 then
-                -- Cột 1
-                local FruitFrame = Instance.new("Frame")
-                FruitFrame.Parent = ContentScrolling
-                FruitFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-                FruitFrame.Position = UDim2.new(0, 10, 0, col1_y)
-                FruitFrame.Size = UDim2.new(0, 320, 0, 30)
-                
-                local FruitCorner = Instance.new("UICorner")
-                FruitCorner.CornerRadius = UDim.new(0, 3)
-                FruitCorner.Parent = FruitFrame
-                
-                local FruitText = Instance.new("TextLabel")
-                FruitText.Parent = FruitFrame
-                FruitText.BackgroundTransparency = 1
-                FruitText.Position = UDim2.new(0, 10, 0, 0)
-                FruitText.Size = UDim2.new(0, 200, 1, 0)
-                FruitText.Text = "🍎 " .. fruit
-                FruitText.TextColor3 = Color3.fromRGB(255, 255, 255)
-                FruitText.Font = Enum.Font.Gotham
-                FruitText.TextSize = 14
-                FruitText.TextXAlignment = Enum.TextXAlignment.Left
-                
-                local FruitStatus = Instance.new("TextLabel")
-                FruitStatus.Parent = FruitFrame
-                FruitStatus.BackgroundTransparency = 1
-                FruitStatus.Position = UDim2.new(1, -50, 0, 0)
-                FruitStatus.Size = UDim2.new(0, 40, 1, 0)
-                FruitStatus.Text = "❌"
-                FruitStatus.TextColor3 = Color3.fromRGB(255, 0, 0)
-                FruitStatus.Font = Enum.Font.GothamBold
-                FruitStatus.TextSize = 16
-                
-                col1_y = col1_y + 35
-            else
-                -- Cột 2
-                local FruitFrame = Instance.new("Frame")
-                FruitFrame.Parent = ContentScrolling
-                FruitFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-                FruitFrame.Position = UDim2.new(0, 340, 0, col2_y)
-                FruitFrame.Size = UDim2.new(0, 320, 0, 30)
-                
-                local FruitCorner = Instance.new("UICorner")
-                FruitCorner.CornerRadius = UDim.new(0, 3)
-                FruitCorner.Parent = FruitFrame
-                
-                local FruitText = Instance.new("TextLabel")
-                FruitText.Parent = FruitFrame
-                FruitText.BackgroundTransparency = 1
-                FruitText.Position = UDim2.new(0, 10, 0, 0)
-                FruitText.Size = UDim2.new(0, 200, 1, 0)
-                FruitText.Text = "🍎 " .. fruit
-                FruitText.TextColor3 = Color3.fromRGB(255, 255, 255)
-                FruitText.Font = Enum.Font.Gotham
-                FruitText.TextSize = 14
-                FruitText.TextXAlignment = Enum.TextXAlignment.Left
-                
-                local FruitStatus = Instance.new("TextLabel")
-                FruitStatus.Parent = FruitFrame
-                FruitStatus.BackgroundTransparency = 1
-                FruitStatus.Position = UDim2.new(1, -50, 0, 0)
-                FruitStatus.Size = UDim2.new(0, 40, 1, 0)
-                FruitStatus.Text = "❌"
-                FruitStatus.TextColor3 = Color3.fromRGB(255, 0, 0)
-                FruitStatus.Font = Enum.Font.GothamBold
-                FruitStatus.TextSize = 16
-                
+button.MouseButton1Click:Connect(function()
+	if not active then
+		active = true
+		loading()
+		optimize()
+		button.Text = "ENABLED"
+		button.BackgroundColor3 = Color3.fromRGB(0,170,0)
+	end
+end)
